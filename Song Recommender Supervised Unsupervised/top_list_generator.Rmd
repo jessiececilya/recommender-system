@@ -1,0 +1,71 @@
+---
+title: "top_list_generator"
+output: top_list_generator
+---
+```{r}
+library(reshape2)
+library(stringr)
+```
+
+```{r}
+kmeans <- readRDS(file="kmeans.rds")
+spotify_df_norm <- readRDS(file="spotify_clusters_and_desc.rds")
+```
+```{r}
+nrow(spotify_df_norm)
+```
+
+
+```{r}
+kmeans
+```
+
+```{r}
+spotify_df_norm
+```
+```{r}
+kmeans$cluster
+```
+
+```{r}
+#input decade + mood(our cluster)
+#return list of songs in that decade, mood, genre
+generate_list <- function(dataframe, kmeans, decade, clusterChosen){
+    idx = dataframe$year >= decade &
+        dataframe$year < (decade+10) & 
+        kmeans$cluster == clusterChosen
+    dataframe[idx,]
+}
+decade <- as.integer(readline(prompt="enter decade "))
+cluster <- as.integer(readline(prompt="enter cluster # "))
+
+generate_list(spotify_df_norm, kmeans, decade, cluster)
+
+
+```
+
+
+```{r}
+set.seed(111)
+big_df <- cbind(spotify_df_norm,kmeans$cluster)
+user <- sample_n(big_df, 100)
+saveRDS(user, "user.rds")
+saveRDS(big_df, "big_df.rds")
+```
+```{r}
+
+automatic_generation <- function(big_df, user){
+#    calculate how many songs are from cluster 1, 2, and 3
+    cluster1 <- sum(user$`kmeans$cluster`==1)
+    cluster2<- sum(user$`kmeans$cluster`==2)
+    cluster3<- sum(user$`kmeans$cluster`==3)
+
+    returned_list <- (sample_n(big_df[big_df$`kmeans$cluster`==1,], cluster1))
+    returned_list <- rbind(returned_list, sample_n(big_df[big_df$`kmeans$cluster`==2,], cluster2))
+    returned_list <- rbind(returned_list, sample_n(big_df[big_df$`kmeans$cluster`==3,], cluster3))
+    returned_list
+}
+
+print(automatic_generation(big_df, user))
+```
+
